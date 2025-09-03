@@ -12,6 +12,7 @@ dependencies:
   sqflite: ^2.3.0 # Versão estável mais recente
   path_provider: ^2.0.11 # Para encontrar o caminho do banco de dados no dispositivo
   path: ^1.8.3 # Para manipular caminhos de arquivos
+ 
 
 dev_dependencies:
   flutter_test:
