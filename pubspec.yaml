@@ -1,23 +1,26 @@
-name: v1_app_fe_cpl
-description: Um projeto Flutter para gerenciar itens com SQFlite.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+name: meu_app_sqflite
+description: Um projeto Flutter para gerenciar itens com SQFlite e sincronização.
+publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0' # Use a versão do seu SDK Flutter
+  sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
-  sqflite: ^2.3.0 # Versão estável mais recente
-  path_provider: ^2.0.11 # Para encontrar o caminho do banco de dados no dispositivo
-  path: ^1.8.3 # Para manipular caminhos de arquivos
- 
+  sqflite: ^2.3.0
+  path_provider: ^2.0.11
+  path: ^1.8.3
+  http: ^1.1.0 # Para requisições HTTP
+  connectivity_plus: ^5.0.1 # Para verificar a conexão com a internet
+  firebase_core: ^2.24.2 # Para setup inicial do Firebase
+  firebase_crashlytics: ^3.4.9 # Para tratamento de erros em produção
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.0 # Boas práticas de linting
+  flutter_lints: ^2.0.0
 
 flutter:
   uses-material-design: true

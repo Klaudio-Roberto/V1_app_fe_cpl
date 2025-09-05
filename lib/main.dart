@@ -11,7 +11,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: '(app_4a) Meu App de Itens',
+      title: '(v2_app-a) Meu App de Itens',
       theme: ThemeData(             // Ao que parece, não está sendo efetivo
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,

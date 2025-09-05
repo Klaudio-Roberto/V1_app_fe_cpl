@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../database/database_helper.dart';
 import '../models/item.dart';
+import '../services/sync_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,7 +17,6 @@ class _HomePageState extends State<HomePage> {
   final TextEditingController _descriptionController = TextEditingController();
   Item? _selectedItem;
 
-  // 1. Crie os FocusNodes
   late FocusNode _nameFocusNode;
   late FocusNode _descriptionFocusNode;
 
@@ -24,17 +24,16 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _loadItems();
-    // Inicialize os FocusNodes no initState
     _nameFocusNode = FocusNode();
     _descriptionFocusNode = FocusNode();
+    SyncService().syncData(); // Inicia a sincronização ao carregar a tela
   }
 
   @override
   void dispose() {
-    // 2. Descarte os FocusNodes no dispose para evitar vazamentos de memória
     _nameFocusNode.dispose();
     _descriptionFocusNode.dispose();
-    _nameController.dispose(); // Também descarte os TextEditingControllers
+    _nameController.dispose();
     _descriptionController.dispose();
     super.dispose();
   }
@@ -44,7 +43,8 @@ class _HomePageState extends State<HomePage> {
       final items = await _dbHelper.getItems();
       if (!mounted) return;
       setState(() {
-        _items = items;
+        // Filtra os itens com status de deleção pendente para não exibi-los
+        _items = items.where((item) => item.syncStatus != 'pendente_delecao').toList();
       });
     } catch (e) {
       if (!mounted) return;
@@ -67,22 +67,20 @@ class _HomePageState extends State<HomePage> {
     try {
       if (_selectedItem == null) {
         await _dbHelper.insertItem(newItem);
-        _showSnackBar('Item adicionado com sucesso!');
+        _showSnackBar('Item adicionado localmente!');
       } else {
         newItem.id = _selectedItem!.id;
+        newItem.backendId = _selectedItem!.backendId; // Garante que o ID do back-end é mantido
         await _dbHelper.updateItem(newItem);
-        _showSnackBar('Item atualizado com sucesso!');
+        _showSnackBar('Item atualizado localmente!');
         _selectedItem = null;
       }
 
-      // Limpa os campos do formulário
       _nameController.clear();
       _descriptionController.clear();
-
-      // 3. Mova o foco após a operação
-      _nameFocusNode.requestFocus(); // Solicita o foco para o campo "Nome do Item"
-
-      _loadItems(); // Recarrega a lista
+      _nameFocusNode.requestFocus();
+      _loadItems();
+      SyncService().syncData(); // Inicia uma sincronização após a operação
     } catch (e) {
       _showSnackBar('Erro ao salvar item: ${e.toString()}');
       print('Erro ao salvar item na UI: $e');
@@ -91,9 +89,11 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _deleteItem(int id) async {
     try {
+      // Em vez de deletar, apenas marca o item para deleção
       await _dbHelper.deleteItem(id);
-      _showSnackBar('Item deletado com sucesso!');
+      _showSnackBar('Item marcado para ser deletado!');
       _loadItems();
+      SyncService().syncData(); // Inicia uma sincronização para enviar a deleção
     } catch (e) {
       _showSnackBar('Erro ao deletar item: ${e.toString()}');
       print('Erro ao deletar item na UI: $e');
@@ -106,7 +106,6 @@ class _HomePageState extends State<HomePage> {
       _nameController.text = item.name;
       _descriptionController.text = item.description;
     });
-    // Ao editar, move o foco para o campo de nome para facilitar a edição
     _nameFocusNode.requestFocus();
   }
 
@@ -120,38 +119,34 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('(v1_fe_cpl/app_4b)App de Itens'),
-        backgroundColor: const Color.from(alpha: 1, red: 0.318, green: 0.851, blue: 0.208),   // Eu incluir essa linha por conta e risco.
+        title: const Text('(v2_app_fe) App de Itens'),
       ),
-
-      body: Padding(                              // "Margens"
+      body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             TextField(
               controller: _nameController,
-              focusNode: _nameFocusNode, // 4. Associe o FocusNode
+              focusNode: _nameFocusNode,
               decoration: const InputDecoration(
                 labelText: 'Nome do Item',
                 border: OutlineInputBorder(),
               ),
-              textInputAction: TextInputAction.next, // Tecla "Next" no teclado
+              textInputAction: TextInputAction.next,
               onSubmitted: (_) {
-                _descriptionFocusNode.requestFocus(); // Move para o próximo campo ao pressionar "Next"
+                _descriptionFocusNode.requestFocus();
               },
             ),
             const SizedBox(height: 10),
             TextField(
               controller: _descriptionController,
-              focusNode: _descriptionFocusNode, // 4. Associe o FocusNode
+              focusNode: _descriptionFocusNode,
               decoration: const InputDecoration(
                 labelText: 'Descrição do Item',
                 border: OutlineInputBorder(),
               ),
-              textInputAction: TextInputAction.done, // Tecla "Done" no teclado
-              onSubmitted: (_) {
-                _addItem(); // Submete o formulário ao pressionar "Done"
-              },
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _addItem(),
             ),
             const SizedBox(height: 15),
             ElevatedButton.icon(
@@ -218,4 +213,3 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
-
